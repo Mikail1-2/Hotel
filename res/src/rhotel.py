@@ -1,24 +1,29 @@
 from collections import deque
-import heapq
-from datetime import datetime
+from datetime import datetime, date
 
-# priority queue
+# Global variable untuk tanggal sekarang
+tanggal_sekarang = date.today()
+
+# Priority queue untuk antrian checkout (belum dipakai)
 antrian_checkout = []
 
+# Fungsi untuk mengubah tanggal sekarang
 def ubah_tanggal():
     global tanggal_sekarang
-    tanggal_input = input("Masukkan tanggal sekarang baru (format: YYYY-MM-DD): ")
-    try:
-        tanggal_sekarang = datetime.strptime(tanggal_input, "%Y-%m-%d").date()
-        print(f"Tanggal sekarang diubah menjadi: {tanggal_sekarang}")
-    except ValueError:
-        print("Format salah! Gunakan format YYYY-MM-DD.")
+    while True:
+        tanggal_input = input("Masukkan tanggal sekarang (YYYY-MM-DD): ")
+        try:
+            tanggal_sekarang = datetime.strptime(tanggal_input, "%Y-%m-%d").date()
+            break
+        except ValueError:
+            print("❌ Format salah! Contoh yang benar: 2025-06-20")
 
-# Struktur data kamar hotel
+# Struktur data untuk kamar hotel
 class Kamar:
     def __init__(self, no_kamar):
         self.no_kamar = no_kamar
         self.tamu = None
+        self.tanggal_checkout = None
 
     def status(self):
         return f"Terisi ({self.tamu})" if self.tamu else "Kosong"
@@ -47,7 +52,7 @@ def tampilkan_kamar():
             print(f"  Kamar {kamar.no_kamar}: {kamar.status()}")
 
 # 2. Reservasi kamar
-def reservasi_kamar(tanggal_checkout):
+def reservasi_kamar():
     print("\n=== Reservasi Kamar ===")
     nama = input("Nama tamu: ")
 
@@ -68,19 +73,25 @@ def reservasi_kamar(tanggal_checkout):
 
     lantai = hotel[kode_lantai]
 
+    while True:
+        tanggal = input("Tanggal checkout (YYYY-MM-DD): ")
+        try:
+            tanggal_obj = datetime.strptime(tanggal, "%Y-%m-%d").date()
+            break
+        except ValueError:
+            print("❌ Format salah! Contoh yang benar: 2025-06-20")
+
     for kamar in lantai.kamar:
         if kamar.tamu is None:
-            tanggal = input("Tanggal checkout (YYYY-MM-DD): ")
-            tanggal_obj = datetime.strptime(tanggal_checkout, "%m-%d")
-            heapq.heappush(antrian_checkout, (tanggal_obj, nama, kamar))
             kamar.tamu = nama
+            kamar.tanggal_checkout = tanggal_obj
             lantai.daftar_tamu.appendleft(nama)
-            print(f"{nama} berhasil reservasi kamar {kamar.no_kamar} di {lantai.nama} (Rp {lantai.harga:,}, checkout {tanggal_checkout})")
+            print(f"{nama} berhasil reservasi kamar {kamar.no_kamar} di {lantai.nama} (Rp {lantai.harga:,}, checkout {tanggal})")
             return
 
     print("Semua kamar penuh di tipe ini.")
 
-# 3. Checkout 1 tamu per lantai
+# 3. Checkout tamu
 def checkout():
     print("\n=== Checkout ===")
     kode = input("Masukkan kode lantai (L2/L3/L4): ").upper()
@@ -94,38 +105,43 @@ def checkout():
         print("Tidak ada tamu di lantai ini.")
         return
 
-    print("\n--- Daftar Tamu di Lantai", lantai.nama, "---")
+    print(f"\n--- Daftar Tamu di Lantai {lantai.nama} ---")
     daftar_opsi = []
     for kamar in lantai.kamar:
         if kamar.tamu:
             nama = kamar.tamu
-            tgl_checkout = kamar.tanggal_obj  # pastikan property ini ada
-            status = "✅ Boleh checkout" if date.today() >= tgl_checkout else "❌ Belum bisa checkout"
+            tgl_checkout = kamar.tanggal_checkout
+            if tgl_checkout:
+                status = "✅ Boleh checkout" if tanggal_sekarang >= tgl_checkout else "❌ Belum bisa checkout"
+            else:
+                status = "❓ Belum diatur tanggal checkout-nya"
             print(f"{nama} - Kamar {kamar.no_kamar} - Checkout: {tgl_checkout} --> {status}")
-            daftar_opsi.append((nama, kamar))
+            daftar_opsi.append((nama, kamar, status))
 
     if not daftar_opsi:
         print("Tidak ada tamu yang sedang menginap di lantai ini.")
         return
 
-    print("\nAda yang ingin di-checkout? (Ketik nama atau 'batal')")
-    nama_input = input(">> ").strip()
+    nama_input = input("\nAda yang ingin di-checkout? (Ketik nama atau 'batal'): ").strip()
 
     if nama_input.lower() == 'batal':
         print("Checkout dibatalkan.")
         return
 
-    # Cari tamu yang dipilih
-    for nama, kamar in daftar_opsi:
+    for nama, kamar, status in daftar_opsi:
         if nama_input.lower() == nama.lower():
+            if status != "✅ Boleh checkout":
+                print(f"{nama} belum waktunya checkout")
+                return
             kamar.tamu = None
-            lantai.daftar_tamu.remove(nama)
+            kamar.tanggal_checkout = None
+            if nama in lantai.daftar_tamu:
+                lantai.daftar_tamu.remove(nama)
             lantai.riwayat_tamu.append((nama, lantai.nama, lantai.harga))
             print(f"{nama} telah checkout dari kamar {kamar.no_kamar} ({lantai.nama})")
             return
 
     print("Tamu tidak ditemukan.")
-
 
 # 4. Tampilkan riwayat tamu
 def tampilkan_tamu():
@@ -146,9 +162,10 @@ def menu():
         print("2. Reservasi Kamar")
         print("3. Checkout")
         print("4. Tampilkan Tamu yang Pernah Menginap")
-        print("5. Keluar")
+        print("5. Ubah Tanggal")
+        print("6. Keluar")
 
-        pilihan = input("Pilih menu (1-5): ")
+        pilihan = input("Pilih menu (1-6): ")
         if pilihan == "1":
             tampilkan_kamar()
         elif pilihan == "2":
@@ -158,6 +175,8 @@ def menu():
         elif pilihan == "4":
             tampilkan_tamu()
         elif pilihan == "5":
+            ubah_tanggal()
+        elif pilihan == "6":
             print("Terima kasih telah menggunakan sistem hotel!")
             break
         else:
