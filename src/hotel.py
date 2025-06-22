@@ -157,8 +157,10 @@ def tampilkan_tamu():
 # 5. Menu utama
 def menu():
     while True:
-        print("\n===== HOTEL KECE ABISS =====")
-        print("1. Tampilkan Kamar")
+        print("\n======== HOTEL KECE ABISS ========")
+        print(f"Tanggal saat ini adalah {tanggal_sekarang}")
+        print("==================================")
+        print("\n1. Tampilkan Kamar")
         print("2. Reservasi Kamar")
         print("3. Checkout")
         print("4. Tampilkan Tamu yang Pernah Menginap")

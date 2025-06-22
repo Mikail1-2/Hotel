@@ -24,6 +24,7 @@ class Kamar:
         self.no_kamar = no_kamar
         self.tamu = None
         self.tanggal_checkout = None
+        self.tanggal_checkin = None
 
     def status(self):
         return f"Terisi ({self.tamu})" if self.tamu else "Kosong"
@@ -72,6 +73,16 @@ def reservasi_kamar():
         return
 
     lantai = hotel[kode_lantai]
+    
+    while True:
+        check = input("Tanggal checkin (YYYY-MM-DD): ")
+        try:
+            if check < tanggal_sekarang:
+                print("Anda tidak dapat Checkin di masa lalu")
+            tanggal_check = datetime.strptime(check, "%Y-%m-%d").date()
+            break
+        except ValueError:
+            print("❌ Format salah! Contoh yang benar: 2025-06-20")
 
     while True:
         tanggal = input("Tanggal checkout (YYYY-MM-DD): ")
@@ -115,7 +126,7 @@ def checkout():
                 status = "✅ Boleh checkout" if tanggal_sekarang >= tgl_checkout else "❌ Belum bisa checkout"
             else:
                 status = "❓ Belum diatur tanggal checkout-nya"
-            print(f"{nama} - Kamar {kamar.no_kamar} - Checkout: {tgl_checkout} --> {status}")
+            print(f"{nama} - Kamar {kamar.no_kamar} - Checkin: {tang} Checkout: {tgl_checkout} --> {status}")
             daftar_opsi.append((nama, kamar, status))
 
     if not daftar_opsi:
